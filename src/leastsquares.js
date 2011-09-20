@@ -22,7 +22,7 @@ window.onload = function() {
     // Canvas dimensions
     var width = 800,
         height = 800;
-    // Spce to leave on the borders of the graph
+    // Space to leave on the borders of the graph
     var leftgutter = 40,
         rightgutter = 40,
         topgutter = 40,
