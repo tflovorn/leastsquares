@@ -57,7 +57,7 @@ var findMean = function (xs) {
     return sum / xs.length;
 };
 
-window.onload = function() {
+window.onload = function () {
     // Canvas dimensions
     var width = 800,
         height = 800;
@@ -77,15 +77,13 @@ window.onload = function() {
     var dataX = [1, 2, 3, 4, 5],
         dataY = [2, 4, 6, 8, 10];
     // Find the extrema of the data to calculate scaling
-    var minX = Math.min.apply(null, dataX),
-        maxX = Math.max.apply(null, dataX),
-        minY = Math.min.apply(null, dataY),
+    var maxX = Math.max.apply(null, dataX),
         maxY = Math.max.apply(null, dataY);
     // Get statistics for data    
     var meanY = findMean(dataY);
     // Calculate the scaling (pixels per x and y) to be used in the graph
-    var scaleX = (width - leftgutter - rightgutter) / (maxX - minX),
-        scaleY = (height - topgutter - bottomgutter) / (maxY - minY);
+    var scaleX = (width - leftgutter - rightgutter) / maxX,
+        scaleY = (height - topgutter - bottomgutter) / maxY;
     // Create the Rapael context inside div element "holder"
     var r = Raphael("holder", width, height);
     // Draw the grid (for reading off coordinates)
@@ -96,7 +94,7 @@ window.onload = function() {
     r.drawGrid(gridX, gridY, gridWidth, gridHeight, 10, 10, "#333");
     // Closure over the grid variables to convert a coordinate on the grid to 
     // pixel space.  For passing to r.drawLines().
-    var coordToPixelsY = function(y) {
+    var coordToPixelsY = function (y) {
         return gridY + gridHeight - y * scaleY;
     };
     // Initialize the line list with one line.
