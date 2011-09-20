@@ -15,7 +15,7 @@ function Line(leftY, rightY, color) {
 // color = color of grid lines
 Raphael.fn.drawGrid = function (x, y, w, h, wv, hv, color) {
     color = color || "#000";
-    var path = ["M", Math.round(x) + 0.5, Math.round(y) + 0.5, "L", Math.round(x + w) + 0.5, Math.round(y) + 0.5, Math.round(x + w) + 0.5, Math.round(y + h) +0.5, Math.round(x) + 0.5, Math.round(y + h) + 0.5, Math.round(x) + 0.5, Math.round(y) + 0.5],
+    var path = ["M", Math.round(x) + 0.5, Math.round(y) + 0.5, "L", Math.round(x + w) + 0.5, Math.round(y) + 0.5, Math.round(x + w) + 0.5, Math.round(y + h) + 0.5, Math.round(x) + 0.5, Math.round(y + h) + 0.5, Math.round(x) + 0.5, Math.round(y) + 0.5],
         rowHeight = h / hv,
         columnWidth = w / wv;
     for (var i = 1; i < hv; i++) {
@@ -42,11 +42,11 @@ Raphael.fn.drawLines = function (lines, leftX, rightX, convertY) {
             rightY = convertY(rightYCoord);
         // Construct the SVG path string.
         var pathList = ["M", leftX, leftY, "L", rightX, rightY],
-            path = this.path(pathList.join(",")).attr({"stroke": color, "stroke-width":0.5});
+            path = this.path(pathList.join(",")).attr({"stroke": color, "stroke-width": 5});
         paths = paths.concat(path);
     }
     return paths;
-}
+};
 
 // Return the mean of the list of numbers xs
 var findMean = function (xs) {
@@ -54,8 +54,8 @@ var findMean = function (xs) {
     for (var i = 0; i < xs.length; i++) {
         sum += xs[i];
     }
-    return sum / xs.length
-}
+    return sum / xs.length;
+};
 
 window.onload = function() {
     // Canvas dimensions
@@ -74,7 +74,7 @@ window.onload = function() {
     // Index of lineColors to use for color of the next line created
     var lineColorIndex = 1;
     // temp. data
-    var dataX = [1, 2, 3, 4,0.5],
+    var dataX = [1, 2, 3, 4, 5],
         dataY = [2, 4, 6, 8, 10];
     // Find the extrema of the data to calculate scaling
     var minX = Math.min.apply(null, dataX),
@@ -82,7 +82,7 @@ window.onload = function() {
         minY = Math.min.apply(null, dataY),
         maxY = Math.max.apply(null, dataY);
     // Get statistics for data    
-    var meanY = findMean(dataY)
+    var meanY = findMean(dataY);
     // Calculate the scaling (pixels per x and y) to be used in the graph
     var scaleX = (width - leftgutter - rightgutter) / (maxX - minX),
         scaleY = (height - topgutter - bottomgutter) / (maxY - minY);
@@ -98,7 +98,7 @@ window.onload = function() {
     // pixel space.  For passing to r.drawLines().
     var coordToPixelsY = function(y) {
         return gridY + gridHeight - y * scaleY;
-    }
+    };
     // Initialize the line list with one line.
     var lines = [new Line(meanY, meanY, lineColors[0])];
     // Draw the initial line
