@@ -72,7 +72,7 @@ window.onload = function () {
         gridColor = "#333",
         lineColors = ["#F00", "#0F0", "#00F", "#CF0", "#C0F", "#0CF"];
     // Index of lineColors to use for color of the next line created
-    var lineColorIndex = 1;
+    var lineColorIndex = 0;
     // temp. data
     var dataX = [1, 2, 3, 4, 5],
         dataY = [2, 4, 6, 8, 10];
@@ -97,8 +97,14 @@ window.onload = function () {
     var coordToPixelsY = function (y) {
         return gridY + gridHeight - y * scaleY;
     };
-    // Initialize the line list with one line.
-    var lines = [new Line(meanY, meanY, lineColors[0])];
+    // Initialize the line list.
+    var lines = [];
+    // Create the first line.
+    var createLine = function () {
+        lines.push(new Line(meanY, meanY, lineColors[lineColorIndex]));
+        lineColorIndex++;
+    };
+    createLine();
     // Draw the initial line
     r.drawLines(lines, gridX, gridX + gridWidth, coordToPixelsY);
 };
