@@ -41,12 +41,11 @@
     };
 
     // Data necessary to describe and draw a graph line.
-    function Line(leftY, rightY, color, leftHandle, rightHandle) {
+    // leftY and rightY are given in coordinate (not pixel) space.
+    function Line(leftY, rightY, color) {
         this.leftY = leftY;
         this.rightY = rightY;
         this.color = color;
-        this.leftHandle = leftHandle;
-        this.rightHandle = rightHandle;
     }
 
     // Convert a coordinate on the grid to pixel space.
@@ -132,7 +131,8 @@
         var lines = [];
         // Create the first line.
         var createLine = function () {
-            lines.push(new Line(meanY, meanY, lineColors[lineColorIndex]));
+            var line = new Line(meanY, meanY, lineColors[lineColorIndex]);
+            lines.push(line);
             lineColorIndex = (lineColorIndex + 1) % lineColors.length;
         };
         createLine();
