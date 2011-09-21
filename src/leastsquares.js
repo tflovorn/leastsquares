@@ -48,17 +48,23 @@
         this.color = color;
     }
 
-    // Add a new horizontal Line to lines with the given y coordinate.
-    var createLine = function (y, lines) {
-        var lineColorIndex = lines.length % lineColors.length,
-            line = new Line(y, y, lineColors[lineColorIndex]);
-        lines.push(line);
-    };
 
     // Convert a coordinate on the grid to pixel space.
     var coordToPixelsY = function (y, scaleY) {
         return gridY() + gridHeight() - y * scaleY;
     };
+
+    // Holds a line and its associated circles.
+    // Creating an instance of this object draws the line and circles.
+    function LineWithHandles(lineData, linePath, leftCircle, rightCircle) {
+        // Line object holding the data for this line.
+        this.lineData = lineData;
+        // Raphael graphics objects.
+        this.linePath = linePath;
+        this.leftCircle = leftCircle;
+        this.rightCircle = rightCircle;
+    }
+
 
     // Draw the coordinate grid.
     // *lifted directly from http://raphaeljs.com/analytics.js
@@ -83,27 +89,75 @@
         return paper.path(path.join(",")).attr({"stroke": gridColor});
     };
 
-    // Draw each Line in lines. The x coordinates on the ends are fixed at 
-    // leftX and rightX. convertY converts from coordinate space to pixel 
-    // space. Return the path objects created.
-    var drawLines = function (paper, lines, scaleY) {
+    // Draw a single Line. The x coordinates on the ends are fixed at 
+    // leftX and rightX. scaleY is the scale factor from coordinate space to
+    // pixel space. Return the Raphael path object created.
+    var drawLine = function(paper, line, scaleY) {
+        // Pull global display parameters.
         var leftX = gridX(),
             rightX = gridX() + gridWidth();
+        // Extract line data; assume parameters could come uninitialized.
+        var color = line.color || "#000",
+            leftYCoord = line.leftY || 0,
+            rightYCoord = line.rightY || 0,
+            leftY = coordToPixelsY(leftYCoord, scaleY),
+            rightY = coordToPixelsY(rightYCoord, scaleY);
+        // Construct the SVG path string.
+        var pathString = ["M", leftX, leftY, "L", rightX, rightY].join(",");
+        // Create the Raphel path object.
+        var path = paper.path(pathString);
+        path.attr({"stroke": color, "stroke-width": 5});
+        return path;
+    };
+
+    // Add a new horizontal LineWithHandles to lines with the given y
+    // coordinate.
+    var createLine = function (paper, y, scaleY, lines) {
+        var lineColor = lineColors[lines.length % lineColors.length],
+            line = new Line(y, y, lineColor),
+            linePath = drawLine(paper, line, scaleY),
+            pixelY = coordToPixelsY(y, scaleY),
+            leftCircle = paper.circle(gridX(), pixelY, 10),
+            rightCircle = paper.circle(gridX() + gridWidth(), pixelY, 10),
+            lineContainer = new LineWithHandles(line, linePath, leftCircle, rightCircle),
+            circleAttrs = {"fill": lineColor, "stroke": lineColor, "stroke-width": 5, "opacity": 0.5};
+        leftCircle.attr(circleAttrs);
+        rightCircle.attr(circleAttrs);
+        lines.push(lineContainer);
+    };
+
+    // Draw each Line in lines. Return all path objects created.
+    var drawLines = function (paper, lines, scaleY) {
         var paths = [];
         for (var i = 0; i < lines.length; i++) {
             var line = lines[i];
-            // Extract line data; assume parameters could come uninitialized.
-            var color = line.color || "#000",
-                leftYCoord = line.leftY || 0,
-                rightYCoord = line.rightY || 0,
-                leftY = coordToPixelsY(leftYCoord, scaleY),
-                rightY = coordToPixelsY(rightYCoord, scaleY);
-            // Construct the SVG path string.
-            var pathList = ["M", leftX, leftY, "L", rightX, rightY],
-                path = paper.path(pathList.join(",")).attr({"stroke": color, "stroke-width": 5});
-            paths = paths.concat(path);
+            paths.push(drawLine(paper, line, scaleY));
         }
         return paths;
+    };
+
+    // Event handlers for dragging circles and their associated lines.
+    // (see http://groups.google.com/group/raphaeljs/browse_thread/thread/295d5f3d2c835134#)
+    // dragStart is called once when the drag begins.
+    var dragStart = function () {
+        // Store starting coordinates.
+        this.oy = this.attr("cy");
+        // Make the circle opaque.
+        this.attr({"opacity": 1});
+    };
+
+    // dragMove is called whenever the position is changed when dragging.
+    var dragMove = function (dx, dy) {
+        // Move the circle (but only in the y direction).
+        this.attr({"cy": this.oy + dy});
+        // Tell the circle's associated line to move.
+        this.lineMove(dy);
+    };
+
+    // dragUp is called once at the end of dragging.
+    var dragUp = function () {
+        // Make the circle transparent.
+        this.attr({"opacity": 0.5});
     };
 
     // Return the mean of the list of numbers xs.
@@ -132,13 +186,11 @@
         // Create the Rapael context inside div element "holder".
         var paper = Raphael("holder", width, height);
         // Draw the coordinate grid.
-        drawGrid(paper, 10, 10);
+        var gridPaths = drawGrid(paper, 10, 10);
         // Initialize the line list.
         var lines = [];
         // Create the first line.
-        createLine(meanY, lines);
-        // Draw the initial lines.
-        drawLines(paper, lines, scaleY);
+        createLine(paper, meanY, scaleY, lines);
     };
 
 })();
