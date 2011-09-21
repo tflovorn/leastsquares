@@ -1,7 +1,7 @@
 (function () {
     "use strict";
 
-    // Global configuration variables (see descriptions in initGlobals()).
+    // Global display parameters (see descriptions in initGlobals()).
     var width, height, leftGutter, rightGutter, topGutter, bottomGutter,
         pointColor, gridColor, lineColors;
 
@@ -48,6 +48,13 @@
         this.color = color;
     }
 
+    // Add a new horizontal Line to lines with the given y coordinate.
+    var createLine = function (y, lines) {
+        var lineColorIndex = lines.length % lineColors.length,
+            line = new Line(y, y, lineColors[lineColorIndex]);
+        lines.push(line);
+    };
+
     // Convert a coordinate on the grid to pixel space.
     var coordToPixelsY = function (y, scaleY) {
         return gridY() + gridHeight() - y * scaleY;
@@ -59,12 +66,11 @@
     // (w, h) = width and height of grid
     // (wv, hv) = number of grid boxes in the x/y direction
     // color = color of grid lines
-    Raphael.fn.drawGrid = function (wv, hv, color) {
+    var drawGrid = function (paper, wv, hv) {
         var x = gridX(),
             y = gridY(),
             w = gridWidth(),
             h = gridHeight();
-        color = color || "#000";
         var path = ["M", Math.round(x) + 0.5, Math.round(y) + 0.5, "L", Math.round(x + w) + 0.5, Math.round(y) + 0.5, Math.round(x + w) + 0.5, Math.round(y + h) + 0.5, Math.round(x) + 0.5, Math.round(y + h) + 0.5, Math.round(x) + 0.5, Math.round(y) + 0.5],
             rowHeight = h / hv,
             columnWidth = w / wv;
@@ -74,13 +80,13 @@
         for (i = 1; i < wv; i++) {
             path = path.concat(["M", Math.round(x + i * columnWidth) + 0.5, Math.round(y) + 0.5, "V", Math.round(y + h) + 0.5]);
         }
-        return this.path(path.join(",")).attr({"stroke": color});
+        return paper.path(path.join(",")).attr({"stroke": gridColor});
     };
 
     // Draw each Line in lines. The x coordinates on the ends are fixed at 
     // leftX and rightX. convertY converts from coordinate space to pixel 
     // space. Return the path objects created.
-    Raphael.fn.drawLines = function (lines, scaleY) {
+    var drawLines = function (paper, lines, scaleY) {
         var leftX = gridX(),
             rightX = gridX() + gridWidth();
         var paths = [];
@@ -94,7 +100,7 @@
                 rightY = coordToPixelsY(rightYCoord, scaleY);
             // Construct the SVG path string.
             var pathList = ["M", leftX, leftY, "L", rightX, rightY],
-                path = this.path(pathList.join(",")).attr({"stroke": color, "stroke-width": 5});
+                path = paper.path(pathList.join(",")).attr({"stroke": color, "stroke-width": 5});
             paths = paths.concat(path);
         }
         return paths;
@@ -110,9 +116,8 @@
     };
 
     window.onload = function () {
+        // Set global display parameters to their default values.
         initGlobals();
-        // Index of lineColors to use for color of the next line created
-        var lineColorIndex = 0;
         // temp. data
         var dataX = [1, 2, 3, 4, 5],
             dataY = [2, 4, 6, 8, 10];
@@ -125,19 +130,15 @@
         var scaleX = (width - leftGutter - rightGutter) / maxX,
             scaleY = (height - topGutter - bottomGutter) / maxY;
         // Create the Rapael context inside div element "holder".
-        var r = Raphael("holder", width, height);
-        r.drawGrid(10, 10, "#333");
+        var paper = Raphael("holder", width, height);
+        // Draw the coordinate grid.
+        drawGrid(paper, 10, 10);
         // Initialize the line list.
         var lines = [];
         // Create the first line.
-        var createLine = function () {
-            var line = new Line(meanY, meanY, lineColors[lineColorIndex]);
-            lines.push(line);
-            lineColorIndex = (lineColorIndex + 1) % lineColors.length;
-        };
-        createLine();
-        // Draw the initial line.
-        r.drawLines(lines, scaleY);
+        createLine(meanY, lines);
+        // Draw the initial lines.
+        drawLines(paper, lines, scaleY);
     };
 
 })();
