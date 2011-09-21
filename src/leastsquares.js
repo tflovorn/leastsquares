@@ -110,15 +110,52 @@
         return path;
     };
 
+    // Event handlers for dragging circles and their associated lines.
+    // (see http://groups.google.com/group/raphaeljs/browse_thread/thread/295d5f3d2c835134#)
+    // dragStart is called once when the drag begins.
+    var dragStart = function () {
+        // Store starting coordinates.
+        this.oy = this.attr("cy");
+        // Make the circle opaque.
+        this.attr({"opacity": 1});
+    };
+
+    // dragMove is called whenever the position is changed when dragging.
+    var dragMove = function (dx, dy) {
+        var newY = this.oy + dy,
+            minY = gridY(),
+            maxY = gridY() + gridHeight();
+        if (newY < minY) {
+            newY = minY;
+        }
+        if (newY > maxY) {
+            newY = maxY;
+        }
+        // Move the circle (but only in the y direction).
+        this.attr({"cy": newY});
+        // Tell the circle's associated line to move.
+//      this.lineMove(dy);
+    };
+
+    // dragUp is called once at the end of dragging.
+    var dragUp = function () {
+        // Make the circle transparent.
+        this.attr({"opacity": 0.5});
+    };
+
     // Add draggable circles onto the ends of the line.
     var drawCircles = function (paper, line, scaleY, radius) {
         var color = line.lineData.color,
             leftY = coordToPixelsY(line.lineData.leftY, scaleY),
             rightY = coordToPixelsY(line.lineData.rightY, scaleY),
             circleAttrs = {"fill": color, "stroke": color,
-                           "stroke-width": 5, "opacity": 0.5};
-        line.leftCircle = paper.circle(gridX(), leftY, 10).attr(circleAttrs);
-        line.rightCircle = paper.circle(gridX() + gridWidth(), rightY, 10).attr(circleAttrs);
+                           "stroke-width": 5, "opacity": 0.5},
+            leftCircle = paper.circle(gridX(), leftY, 10),
+            rightCircle = paper.circle(gridX() + gridWidth(), rightY, 10);
+        leftCircle.attr(circleAttrs);
+        leftCircle.drag(dragMove, dragStart, dragUp);
+        rightCircle.attr(circleAttrs);
+        rightCircle.drag(dragMove, dragStart, dragUp);
         return line;
     };
 
@@ -134,29 +171,6 @@
         return line;
     };
 
-    // Event handlers for dragging circles and their associated lines.
-    // (see http://groups.google.com/group/raphaeljs/browse_thread/thread/295d5f3d2c835134#)
-    // dragStart is called once when the drag begins.
-    var dragStart = function () {
-        // Store starting coordinates.
-        this.oy = this.attr("cy");
-        // Make the circle opaque.
-        this.attr({"opacity": 1});
-    };
-
-    // dragMove is called whenever the position is changed when dragging.
-    var dragMove = function (dx, dy) {
-        // Move the circle (but only in the y direction).
-        this.attr({"cy": this.oy + dy});
-        // Tell the circle's associated line to move.
-        this.lineMove(dy);
-    };
-
-    // dragUp is called once at the end of dragging.
-    var dragUp = function () {
-        // Make the circle transparent.
-        this.attr({"opacity": 0.5});
-    };
 
     // Return the mean of the list of numbers xs.
     var findMean = function (xs) {
