@@ -62,10 +62,10 @@ window.onload = function () {
     var width = 800,
         height = 800;
     // Space to leave on the borders of the graph
-    var leftgutter = 40,
-        rightgutter = 40,
-        topgutter = 40,
-        bottomgutter = 40;
+    var leftGutter = 40,
+        rightGutter = 40,
+        topGutter = 40,
+        bottomGutter = 40;
     // Graph element colors.  A convenient chart is at:
     // http://www.december.com/html/spec/color3hex1.html
     var pointColor = "#000",
@@ -82,15 +82,15 @@ window.onload = function () {
     // Get statistics for data    
     var meanY = findMean(dataY);
     // Calculate the scaling (pixels per x and y) to be used in the graph
-    var scaleX = (width - leftgutter - rightgutter) / maxX,
-        scaleY = (height - topgutter - bottomgutter) / maxY;
+    var scaleX = (width - leftGutter - rightGutter) / maxX,
+        scaleY = (height - topGutter - bottomGutter) / maxY;
     // Create the Rapael context inside div element "holder"
     var r = Raphael("holder", width, height);
     // Draw the grid (for reading off coordinates)
-    var gridX = leftgutter + 0.5,
-        gridY = topgutter + 0.5,
-        gridWidth = width - leftgutter - rightgutter,
-        gridHeight = height - topgutter - bottomgutter;
+    var gridX = leftGutter + 0.5,
+        gridY = topGutter + 0.5,
+        gridWidth = width - leftGutter - rightGutter,
+        gridHeight = height - topGutter - bottomGutter;
     r.drawGrid(gridX, gridY, gridWidth, gridHeight, 10, 10, "#333");
     // Closure over the grid variables to convert a coordinate on the grid to 
     // pixel space.  For passing to r.drawLines().
