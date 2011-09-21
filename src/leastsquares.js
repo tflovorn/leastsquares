@@ -42,7 +42,7 @@
 
     // Data necessary to describe and draw a graph line.
     // leftY and rightY are given in coordinate (not pixel) space.
-    function Line(leftY, rightY, color) {
+    function LineData(leftY, rightY, color) {
         this.leftY = leftY;
         this.rightY = rightY;
         this.color = color;
@@ -56,7 +56,7 @@
 
     // Holds a line and its associated circles.
     // Creating an instance of this object draws the line and circles.
-    function LineWithHandles(lineData, linePath, leftCircle, rightCircle) {
+    function Line(lineData, linePath, leftCircle, rightCircle) {
         // Line object holding the data for this line.
         this.lineData = lineData;
         // Raphael graphics objects.
@@ -92,14 +92,14 @@
     // Draw a single Line. The x coordinates on the ends are fixed at 
     // leftX and rightX. scaleY is the scale factor from coordinate space to
     // pixel space. Return the Raphael path object created.
-    var drawLine = function(paper, line, scaleY) {
+    var drawLine = function (paper, lineData, scaleY) {
         // Pull global display parameters.
         var leftX = gridX(),
             rightX = gridX() + gridWidth();
         // Extract line data; assume parameters could come uninitialized.
-        var color = line.color || "#000",
-            leftYCoord = line.leftY || 0,
-            rightYCoord = line.rightY || 0,
+        var color = lineData.color || "#000",
+            leftYCoord = lineData.leftY || 0,
+            rightYCoord = lineData.rightY || 0,
             leftY = coordToPixelsY(leftYCoord, scaleY),
             rightY = coordToPixelsY(rightYCoord, scaleY);
         // Construct the SVG path string.
@@ -110,30 +110,28 @@
         return path;
     };
 
+    // Add draggable circles onto the ends of the line.
+    var drawCircles = function (paper, line, scaleY, radius) {
+        var color = line.lineData.color,
+            leftY = coordToPixelsY(line.lineData.leftY, scaleY),
+            rightY = coordToPixelsY(line.lineData.rightY, scaleY),
+            circleAttrs = {"fill": color, "stroke": color,
+                           "stroke-width": 5, "opacity": 0.5};
+        line.leftCircle = paper.circle(gridX(), leftY, 10).attr(circleAttrs);
+        line.rightCircle = paper.circle(gridX() + gridWidth(), rightY, 10).attr(circleAttrs);
+        return line;
+    };
+
     // Add a new horizontal LineWithHandles to lines with the given y
     // coordinate.
     var createLine = function (paper, y, scaleY, lines) {
         var lineColor = lineColors[lines.length % lineColors.length],
-            line = new Line(y, y, lineColor),
-            linePath = drawLine(paper, line, scaleY),
-            pixelY = coordToPixelsY(y, scaleY),
-            leftCircle = paper.circle(gridX(), pixelY, 10),
-            rightCircle = paper.circle(gridX() + gridWidth(), pixelY, 10),
-            lineContainer = new LineWithHandles(line, linePath, leftCircle, rightCircle),
-            circleAttrs = {"fill": lineColor, "stroke": lineColor, "stroke-width": 5, "opacity": 0.5};
-        leftCircle.attr(circleAttrs);
-        rightCircle.attr(circleAttrs);
-        lines.push(lineContainer);
-    };
-
-    // Draw each Line in lines. Return all path objects created.
-    var drawLines = function (paper, lines, scaleY) {
-        var paths = [];
-        for (var i = 0; i < lines.length; i++) {
-            var line = lines[i];
-            paths.push(drawLine(paper, line, scaleY));
-        }
-        return paths;
+            lineData = new LineData(y, y, lineColor),
+            linePath = drawLine(paper, lineData, scaleY),
+            line = new Line(lineData, linePath, null, null);
+        drawCircles(paper, line, scaleY, 10, lineColor);
+        lines.push(line);
+        return line;
     };
 
     // Event handlers for dragging circles and their associated lines.
