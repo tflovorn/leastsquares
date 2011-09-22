@@ -59,7 +59,6 @@
     };
 
     // Holds a line and its associated circles.
-    // Creating an instance of this object draws the line and circles.
     function Line(lineData, linePath, leftCircle, rightCircle) {
         // Line object holding the data for this line.
         this.lineData = lineData;
@@ -223,8 +222,9 @@
         var gridPaths = drawGrid(paper, 10, 10);
         // Initialize the line list.
         var lines = [];
-        // Create the first line.
         createLine(paper, meanY, scaleY, lines);
+        createLine(paper, meanY / 2, scaleY, lines);
+        createLine(paper, meanY / 4, scaleY, lines);
     };
 
 })();
