@@ -48,10 +48,14 @@
         this.color = color;
     }
 
-
     // Convert a coordinate on the grid to pixel space.
     var coordToPixelsY = function (y, scaleY) {
         return gridY() + gridHeight() - y * scaleY;
+    };
+
+    // Convert a coordinate in pixel space to the grid coordinates.
+    var pixelsToCoord = function (y, scaleY) {
+        return (gridHeight() - (y - topGutter)) / scaleY;
     };
 
     // Holds a line and its associated circles.
@@ -64,7 +68,6 @@
         this.leftCircle = leftCircle;
         this.rightCircle = rightCircle;
     }
-
 
     // Draw the coordinate grid.
     // *lifted directly from http://raphaeljs.com/analytics.js
@@ -89,6 +92,12 @@
         return paper.path(path.join(",")).attr({"stroke": gridColor});
     };
 
+    // Return the SVG path string for a line from (leftX, leftY) to
+    // (rightX, rightY).
+    var linePathString = function (leftX, leftY, rightX, rightY) {
+        return ["M", leftX, leftY, "L", rightX, rightY].join(",");
+    };
+
     // Draw a single Line. The x coordinates on the ends are fixed at 
     // leftX and rightX. scaleY is the scale factor from coordinate space to
     // pixel space. Return the Raphael path object created.
@@ -102,10 +111,8 @@
             rightYCoord = lineData.rightY || 0,
             leftY = coordToPixelsY(leftYCoord, scaleY),
             rightY = coordToPixelsY(rightYCoord, scaleY);
-        // Construct the SVG path string.
-        var pathString = ["M", leftX, leftY, "L", rightX, rightY].join(",");
         // Create the Raphel path object.
-        var path = paper.path(pathString);
+        var path = paper.path(linePathString(leftX, leftY, rightX, rightY));
         path.attr({"stroke": color, "stroke-width": 5});
         return path;
     };
@@ -114,7 +121,7 @@
     // (see http://groups.google.com/group/raphaeljs/browse_thread/thread/295d5f3d2c835134#)
     // dragStart is called once when the drag begins.
     var dragStart = function () {
-        // Store starting coordinates.
+        // Store starting coordinates to use when moving.
         this.oy = this.attr("cy");
         // Make the circle opaque.
         this.attr({"opacity": 1});
@@ -125,6 +132,7 @@
         var newY = this.oy + dy,
             minY = gridY(),
             maxY = gridY() + gridHeight();
+        // Don't let the circles leave the grid.
         if (newY < minY) {
             newY = minY;
         }
@@ -134,7 +142,7 @@
         // Move the circle (but only in the y direction).
         this.attr({"cy": newY});
         // Tell the circle's associated line to move.
-//      this.lineMove(dy);
+        this.lineMove(newY);
     };
 
     // dragUp is called once at the end of dragging.
@@ -144,33 +152,47 @@
     };
 
     // Add draggable circles onto the ends of the line.
-    var drawCircles = function (paper, line, scaleY, radius) {
-        var color = line.lineData.color,
-            leftY = coordToPixelsY(line.lineData.leftY, scaleY),
-            rightY = coordToPixelsY(line.lineData.rightY, scaleY),
+    var createCircles = function (paper, line, scaleY, radius) {
+        var data = line.lineData,
+            color = data.color,
+            leftX = gridX(),
+            rightX = gridX() + gridWidth(),
+            initialLeftY = coordToPixelsY(data.leftY, scaleY),
+            initialRightY = coordToPixelsY(data.rightY, scaleY),
             circleAttrs = {"fill": color, "stroke": color,
                            "stroke-width": 5, "opacity": 0.5},
-            leftCircle = paper.circle(gridX(), leftY, 10),
-            rightCircle = paper.circle(gridX() + gridWidth(), rightY, 10);
+            leftCircle = paper.circle(gridX(), initialLeftY, radius),
+            rightCircle = paper.circle(gridX() + gridWidth(), initialRightY, radius);
         leftCircle.attr(circleAttrs);
         leftCircle.drag(dragMove, dragStart, dragUp);
+        leftCircle.lineMove = function (newLeftY) {
+            data.leftY = pixelsToCoord(newLeftY, scaleY);
+                // rightY may have changed, so recalculate it
+            var newRightY = coordToPixelsY(data.rightY, scaleY),
+                pathString = linePathString(leftX, newLeftY, rightX, newRightY);
+            line.linePath.attr({"path": pathString});
+        };
         rightCircle.attr(circleAttrs);
         rightCircle.drag(dragMove, dragStart, dragUp);
+        rightCircle.lineMove = function (newRightY) {
+            data.rightY = pixelsToCoord(newRightY, scaleY);
+            var newLeftY = coordToPixelsY(data.leftY, scaleY),
+                pathString = linePathString(leftX, newLeftY, rightX, newRightY);
+            line.linePath.attr({"path": pathString});
+        };
         return line;
     };
 
-    // Add a new horizontal LineWithHandles to lines with the given y
-    // coordinate.
+    // Add a new horizontal Line to lines with the given y coordinate.
     var createLine = function (paper, y, scaleY, lines) {
         var lineColor = lineColors[lines.length % lineColors.length],
             lineData = new LineData(y, y, lineColor),
             linePath = drawLine(paper, lineData, scaleY),
             line = new Line(lineData, linePath, null, null);
-        drawCircles(paper, line, scaleY, 10, lineColor);
+        createCircles(paper, line, scaleY, 15, lineColor);
         lines.push(line);
         return line;
     };
-
 
     // Return the mean of the list of numbers xs.
     var findMean = function (xs) {
